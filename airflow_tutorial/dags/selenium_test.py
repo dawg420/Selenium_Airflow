@@ -1,32 +1,28 @@
-import os
+import sys
+
+import pendulum
+sys.path.append(r'../')
 from airflow import DAG
+# from airflow.providers.docker.operators.docker import DockerOperator
 from airflow.operators.bash import BashOperator
-from datetime import timedelta, datetime
+# from docker.types import Mount
 
-path = os.environ['AIRFLOW_HOME']
-#dag.py
 default_args = {
-                'owner': 'YourName',
-                'depends_on_past': False,
-                'email': ['YourEmail@gmail.com'],
-                'email_on_failure': False,
-                'email_on_retry': False,
-                'retries': 0,
-                'retry_delay': timedelta(minutes=1)
-                }
+    'owner': 'airflow',
+    'start_date': pendulum.today('UTC').add(days=-1),
+}
+
+with DAG(
+    dag_id='selenium_dag',
+    default_args=default_args,
+    schedule=None,
+    catchup=False,
+) as dag:
+
+    run_startup_script = BashOperator(
+        task_id='run_startup_script',
+        bash_command="{{ 'docker exec airflow_tutorial-chrome-1 /scripts/startup.sh' | safe }}"
+    )
 
 
-# Define the DAG, its ID and when should it run.
-dag = DAG(
-            dag_id='test_sl',
-            start_date=datetime(year=2024, month=1, day=1),
-            schedule_interval="@hourly",
-            default_args=default_args,
-            catchup=False
-            )
-
-# Define the task 1 (collect the data) id. Run the bash command because the task is in a .py file.
-task = BashOperator(
-                        task_id='get_data',
-                        bash_command=f'python {path}/dags/src/main.py',
-                        dag=dag)
+    run_startup_script

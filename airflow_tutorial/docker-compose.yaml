@@ -53,12 +53,24 @@ x-airflow-common:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
-  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-50000}"
+    - ./airflow.cfg:/opt/airflow/airflow.cfg
+    - /var/run/docker.sock:/var/run/docker.sock
+  user: root
   depends_on:
     postgres:
       condition: service_healthy
 
 services:
+  chrome:
+    build:
+      context: .
+      dockerfile: chrome.Dockerfile
+    ports:
+      - 5900:5900
+    volumes:
+      - ./dags/app:/app
+    shm_size: '2g'
+
   postgres:
     image: postgres:13
     environment:
@@ -67,6 +79,7 @@ services:
       POSTGRES_DB: airflow
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+      - ./airflow.cfg:/opt/airflow/airflow.cfg
     ports:
       - 5432:5432
     healthcheck:
@@ -85,10 +98,20 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./airflow.cfg:/opt/airflow/airflow.cfg
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: root
     restart: always
 
   airflow-scheduler:
     <<: *airflow-common
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./airflow.cfg:/opt/airflow/airflow.cfg
+      - /var/run/docker.sock:/var/run/docker.sock
+    user: root
     command: scheduler
     restart: always
 
@@ -102,23 +125,16 @@ services:
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
 
-  chrome:
-    image: selenium/node-chrome:dev
-    shm_size: 2gb
-    depends_on:
-      - selenium-hub-tutorial
-    environment:
-      - SE_EVENT_BUS_HOST=selenium-hub
-      - SE_EVENT_BUS_PUBLISH_PORT=4442
-      - SE_EVENT_BUS_SUBSCRIBE_PORT=4443
 
-  selenium-hub-tutorial:
-    image: selenium/hub:latest
-    container_name: selenium-hub
-    ports:
-      - "4442:4442"
-      - "4443:4443"
-      - "4444:4444"
+
+  # selenium-hub-tutorial:
+  #   image: selenium/hub:latest
+  #   container_name: selenium-hub
+  #   ports:
+  #     - "4442:4442"
+  #     - "4443:4443"
+  #     - "4444:4444"
 
 volumes:
   postgres-db-volume:
+

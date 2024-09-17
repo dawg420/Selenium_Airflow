@@ -40,6 +40,7 @@ async def get_article_links(p):
 
 async def extract_information(browser, link):
     p = await browser.get(link)
+    await p.maximize()
     html = await p.get_content()
     bsobj = BeautifulSoup(html, 'html.parser')
 
@@ -60,7 +61,7 @@ async def extract_information(browser, link):
     text = "\n".join([item.get_text().strip() for item in text_res if item.get_text()]).strip()
 
     # Remove irrelevant parts
-    for unwanted in ["Best News Website or Mobile Service", "WAN-IFRA Digital Media Awards Worldwide", "Advertisement"]:
+    for unwanted in ["Best News Website or Mobile Service", "WAN-IFRA Digital Media Awards Worldwide", "Advertisement", "Digital Media Awards Worldwide 2022"]:
         text = text.replace(unwanted, "")
     content = text.strip()
 
@@ -73,7 +74,15 @@ async def extract_information(browser, link):
             date_text = await p.select("#block-mc-cna-theme-mainpagecontent > article > div.content > div:nth-child(3) > div.layout__region.layout__region--second > section > div.article-publish.article-publish--.block.block-mc-content-share-bookmark.block-content-share-bookmark.clearfix")  
             date_text = date_text.text.strip()
         except:
-            date_text = ""
+            try:
+                date_text = await p.select('#block-mc-cnaluxury-theme-mainpagecontent > article:nth-child(1) > div.content > div:nth-child(3) > div.layout__region.layout__region--second > section.block.block-mc-content-share-bookmark.block-content-share-bookmark.clearfix > div.article-publish.article-publish--')
+                date_text = date_text.text.strip()
+            except: 
+                try:
+                    date_text = await p.select('#block-mc-cnalifestyle-theme-mainpagecontent > article > div.content > div:nth-child(3) > div.layout__region.layout__region--second > section > div.article-publish.article-publish--.block.block-mc-content-share-bookmark.block-content-share-bookmark.clearfix')
+                    date_text = date_text.text.strip()
+                except:
+                    date_text = ""
     date_text = ' '.join(date_text.split(' ')[1:4]) if 'Updated' in date_text else ' '.join(date_text.split(' ')[:-1])
     print(f'date_text: {date_text}')
     
@@ -82,16 +91,35 @@ async def extract_information(browser, link):
         new_date = date_res_1.strftime('%Y-%m-%d')
     else:
         new_date = ""
+        utc_date_time = ""
 
-    # Time extraction
+
     time_res = bsobj.select(
         'div[class="article-publish article-publish-- block block-mc-content-share-bookmark block-content-share-bookmark clearfix"]')
-    time_res_line = time_res[0].get_text() if time_res else "12:00 AM"
-    o = re.search("[0-9]+:[0-9]+", time_res_line).group() + ":00"
-    c = re.search("(AM|PM)", time_res_line).group() if re.search("(AM|PM)", time_res_line) else "AM"
-    hrs_24 = convert_24hrs(f"{o} {c}")
-    prepared_utc = f"{new_date} {hrs_24}"
-    utc_date_time = common_methods.convert_LocalToUtc_Date(prepared_utc, input_time_zone="Asia/Singapore")
+    if len(time_res) == 0:
+        time_res_line = "12:00 AM"
+    else:
+        time_res_line = time_res[0].get_text()
+    first_match = re.search(pattern="[0-9]+[0-9]:[0-9]+[0-9]+", string=time_res_line)
+    if first_match is None:
+        first_match_try = re.search(pattern="[0-9]:[0-9]+[0-9]+", string=time_res_line)
+        o = first_match_try.group()
+    else:
+        o = first_match.group()
+
+    i = o + ':00'
+    second_match = re.search(pattern="(AM|PM)", string=time_res_line)
+    if second_match:
+        c = second_match.group()
+    else:
+        c = "AM"
+    k = (" ".join([i, c]))
+    hrs_24 = convert_24hrs(k)
+
+    if new_date != "":
+        prepared_utc = (" ".join([new_date, hrs_24]))
+
+        utc_date_time = common_methods.convert_LocalToUtc_Date(prepared_utc, input_time_zone="Asia/Singapore")
 
     return title, author, content, new_date, utc_date_time
 
@@ -109,10 +137,12 @@ async def do_scrapy(browser, category, category_id):
         page += 1
         try:
             p = await browser.get(f"{main_url}{category_id}&page={page}")
+            await p.maximize()
             print(f'Scrolling in the section {category}...')
         except:
             await browser.wait(2)
             p = await browser.get(f"{main_url}{category_id}&page={page}")
+            await p.maximize()
 
         url_list = await get_article_links(p)
         # print(f'URLs: {url_list}')

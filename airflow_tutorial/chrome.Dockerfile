@@ -22,11 +22,8 @@ RUN apk add --no-cache \
     fluxbox \
     xterm \
     libffi-dev \
-    openssl-dev \
-    zlib-dev \
     bzip2-dev \
-    readline-dev \
-    sqlite-dev \
+    bzip2 \
     git \
     nss \
     freetype \
@@ -37,9 +34,7 @@ RUN apk add --no-cache \
     chromium \
     chromium-chromedriver
 
-# Install x11vnc
-RUN mkdir ~/.vnc
-RUN x11vnc -storepasswd 1234 ~/.vnc/passwd
+RUN python -m pip install --upgrade pip
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --no-deps -r /tmp/requirements.txt && \

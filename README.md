@@ -8,4 +8,4 @@ This repo use selenium with Airflow to schedule scraping task
 - `cd /path/airflow_tutorial`
 - `docker build . --tag extending_airflow_tutorial:latest`
 - `docker-compose up -d`
-- Go to http://localhost:8080/ and run test_sl
+- Go to http://localhost:8080/

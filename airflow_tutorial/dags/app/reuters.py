@@ -9,13 +9,13 @@ import uuid
 import bs4
 from bs4 import BeautifulSoup
 from pymongo.errors import DuplicateKeyError
-
+from dateutil import parser
 sys.path.append(r'../../')
 
 import common_methods
 import nodriver as uc
 from selenium.common.exceptions import InvalidSessionIdException
-
+from bson import Binary, UuidRepresentation
 
 BASE_URL = 'https://www.reuters.com'
 CurrentDate = time.strftime('%Y-%m-%d', time.localtime(time.time()))
@@ -76,11 +76,11 @@ async def login(browser):
 
     tab = await browser.get('https://www.reuters.com/')
     await tab.maximize()
-    time.sleep(4)
+    time.sleep(5)
     username = 'desktopremote891@gmail.com'
     password = 'Aidf#$123456'
-
-    elem = await tab.select('#fusion-app > header > div > div > div > div > div.site-header__button-group__2OXlt > a.button__link__uTGln.button__secondary__18moI.button__round__1nYLA.button__w_auto__6WYRo.text-button__container__3q3zX.site-header__button__3fm5y > span > span', timeout=15)
+    time.sleep(3)
+    elem = await tab.select('#fusion-app > header > div > div > div > div > div.site-header__button-group__2OXlt > a.button__link__uTGln.button__secondary__18moI.button__round__1nYLA.button__w_auto__6WYRo.text-button__container__3q3zX.site-header__button__3fm5y > span > span')
     await elem.click()
     time.sleep(2)
     elem = await tab.select('#email')
@@ -97,32 +97,24 @@ async def login(browser):
 
 # Returns the date and utc datetime of a given date string
 def format_date_text(date_text):
-    month = re.search(re.compile(r"[a-zA-Z]+(?= \d+,)"), date_text)[0]
-    day = re.search(re.compile(r"[0-9]+(?=,)"), date_text)[0]
-    year = re.search(re.compile(r"(?<=, )[0-9]+"), date_text)[0]
-
-    hr = re.search(re.compile(r"[0-9]+(?=:)"), date_text)[0]
-    min = re.search(re.compile(r"(?<=:)[0-9]+"), date_text)[0]
-    Am_Pm = re.search(re.compile(r"(?<=:[0-9][0-9] )[a-zA-Z]+"), date_text)[0]
-
-    # Match the timezone offset "GMT+HH"
-    regex = re.compile(r'(?<=GMT)[+-][0-9]+')
-    match = re.search(regex, date_text)
-    timezone_offset = int(match.group(0))
-
-
-    date_string = f'{year} {month} {day} {hr}:{min} {Am_Pm}'
-    datetime_obj = datetime.datetime.strptime(date_string, '%Y %B %d %I:%M %p')
-
-    # Add timezone to datetime object and convert to UTC
-    tz = datetime.timezone(datetime.timedelta(hours=timezone_offset))
-    datetime_obj = datetime_obj.replace(tzinfo=tz)
+    # Remove the 'Updated ... ago' part if present
+    date_time_part = date_text.split(' Updated ')[0].strip()
+    
+    # Parse the date and time with dateutil
+    datetime_obj = parser.parse(date_time_part)
+    
+    # Ensure datetime is timezone-aware
+    if datetime_obj.tzinfo is None:
+        # Set default timezone if none is provided
+        datetime_obj = datetime_obj.replace(tzinfo=datetime.timezone.utc)
+    
+    # Convert to UTC
     utc_datetime_obj = datetime_obj.astimezone(datetime.timezone.utc)
-
-
-    date = str(datetime_obj.date())
+    
+    # Format the output
+    date = utc_datetime_obj.date().isoformat()
     utc_datetime = utc_datetime_obj.strftime("%Y-%m-%d %H:%M:%S")
-
+    
     return date, utc_datetime
 
 
@@ -223,7 +215,7 @@ def extract_author(soup: bs4.BeautifulSoup):
     if author_div_tag:
 
         # Case 1: <a> tags each containing one author's name
-        author_a_tags = author_div_tag.find_all('a', rel='author')
+        author_a_tags = author_div_tag.find_all('a')
         if author_a_tags:
             names = [name.text.strip() for name in author_a_tags]
             return ", ".join(names)
@@ -279,7 +271,7 @@ async def scrape_article(browser, url):
         print(f"Error extracting info: {full_title}\n{url}")
         print(e)
         return failed_result
-
+    print(date_text)
 
     try:
         date, utc_datetime = format_date_text(date_text)
@@ -486,7 +478,7 @@ def import_into_db(collection, article: Article) -> bool:
 
     # Create the ID based on the title and date so that database can detect duplicate articles
     _id = uuid.uuid3(uuid.NAMESPACE_DNS, article.title + article.date)
-    record["_id"]           = int(_id)
+    record["_id"]           = Binary.from_uuid(_id, uuid_representation=UuidRepresentation.STANDARD)
     record["Date"]          = article.date
     record["UTC_datetime"]  = article.utc_datetime
     record["Title"]         = article.title

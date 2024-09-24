@@ -61,7 +61,21 @@ x-airflow-common:
       condition: service_healthy
 
 services:
+  squid:
+    image: anticaptcha/squid
+    container_name: squid
+    ports:
+      - "3128:3128"
+    environment:
+      - PROXYLOGIN=mylogin
+      - PROXYPASSWORD=mypassword
+    restart: always
+    networks:
+      - default
+
   chrome:
+    depends_on:
+    - squid
     build:
       context: .
       dockerfile: chrome.Dockerfile
@@ -134,17 +148,7 @@ services:
   #     - "4442:4442"
   #     - "4443:4443"
   #     - "4444:4444"
-  squid:
-    image: anticaptcha/squid
-    container_name: squid
-    ports:
-      - "3128:3128"
-    environment:
-      - PROXYLOGIN=mylogin
-      - PROXYPASSWORD=mypassword
-    restart: always
-    networks:
-      - default
+
 
 volumes:
   postgres-db-volume:

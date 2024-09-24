@@ -494,7 +494,9 @@ topics_to_skip_casefold = set(s.casefold() for s in topics_to_skip)
 async def main():
     # isTesting = True
     isTesting = False
-
+    browser_args=[
+            "--proxy-server=http://squid:3128"
+        ]
     if isTesting:
         # Testing script
         home_page_url = 'https://www.wsj.com/'
@@ -504,7 +506,7 @@ async def main():
         if isHeadless:
             print("Starting browser in headless mode")
 
-        browser = await uc.start(sandbox=False)
+        browser = await uc.start(sandbox=False, browser_args=browser_args)
         browser = await login_in(browser, home_page_url)
 
         if not browser:
@@ -592,7 +594,7 @@ async def main():
         if isHeadless:
             print("Starting browser in headless mode")
 
-        browser = await uc.start()
+        browser = await uc.start(sandbox=False, browser_args=browser_args)
         browser = await login_in(browser, home_page_url)
 
         if not browser:

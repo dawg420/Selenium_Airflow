@@ -134,7 +134,21 @@ services:
   #     - "4442:4442"
   #     - "4443:4443"
   #     - "4444:4444"
+  squid:
+    image: anticaptcha/squid
+    container_name: squid
+    ports:
+      - "3128:3128"
+    environment:
+      - PROXYLOGIN=mylogin
+      - PROXYPASSWORD=mypassword
+    restart: always
+    networks:
+      - default
 
 volumes:
   postgres-db-volume:
+
+networks:
+  default:
 

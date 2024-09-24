@@ -12,6 +12,11 @@ import datetime
 # from seleniumbase import Driver
 from pymongo.errors import DuplicateKeyError
 
+proxy_host = "squid"
+proxy_port = 3128
+proxy_login = "mylogin"
+proxy_pass = "mypassword"
+
 def connect_db():
     DB_URI = 'mongodb://crinlp:123@10.230.252.3:27017/?authSource=admin&readPreference=primary&appname=MongoDB%20Compass&ssl=false' ## Please set your own database here
     client = MongoClient(DB_URI)

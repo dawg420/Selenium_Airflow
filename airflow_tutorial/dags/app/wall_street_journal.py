@@ -28,9 +28,10 @@ async def login_in(browser, url):
     while fail_count < 5:
         try:
             tab = await browser.get(url)
+            time.sleep(4)
             await tab.maximize()
             print('Opened home page')
-
+            time.sleep(2)
             # Click the Sign In 'button' on home page
             # It's actually an <a> element styled to look like a button, not a <button> element
             elem = await tab.select('#root > div > div > div > div:nth-child(1) > header > div:nth-child(1) > div > div.style--customer-nav--2VtWGQXP > div > a.style--login--Hf7kMsAS.style--button--WR9PfOiS', timeout=15)
@@ -503,7 +504,7 @@ async def main():
         if isHeadless:
             print("Starting browser in headless mode")
 
-        browser = await uc.start()
+        browser = await uc.start(sandbox=False)
         browser = await login_in(browser, home_page_url)
 
         if not browser:
@@ -540,7 +541,7 @@ async def main():
 
         start_page = 1
         num_of_articles_to_skip = 0
-        await do_scrapy(date, browser, start_page, num_of_articles_to_skip)
+        await do_scrapy(date, browser, start_page, num_of_articles_to_skip,  logger=logger)
 
         browser.quit()
         exit()

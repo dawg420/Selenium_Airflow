@@ -6,7 +6,7 @@ import uuid
 import bson
 from bson.binary import UuidRepresentation
 # import undetected_chromedriver as uc
-
+from anticaptchaofficial.antigatetask import *
 import pytz
 import datetime
 # from seleniumbase import Driver
@@ -116,3 +116,31 @@ def convert_LocalToUtc_Date(Date, time_zone=None, input_time_zone=None):
     utc_dt = local_dt.astimezone(pytz.utc)
 
     return utc_dt.strftime("%Y-%m-%d %H:%M:%S")
+
+def solve_captcha(url, cookies):
+    solver = antigateTask()
+    solver.set_template_name("Anti-bot screen bypass")
+    solver.set_variables({
+        "css_selector": "some value"
+    })
+    solver.set_verbose(1)
+    solver.set_cookies(cookies)
+    solver.set_key("29e381f6bad0fff2a22862aa18b6212c")
+    solver.set_website_url(url)
+    # solver.set_proxy_address(proxy_host)
+    # solver.set_proxy_port(proxy_port)
+    # solver.set_proxy_login(proxy_login)
+    # solver.set_proxy_password(proxy_pass)
+    result = solver.solve_and_return_solution()
+    if result == 0:
+        print("could not solve task")
+        return Exception("Could not solve task")
+
+    print(result)
+
+    cookies, localStorage, fingerprint = result["cookies"], result["localStorage"], result["fingerprint"]
+    if len(cookies) == 0:
+        print("empty cookies, try again")
+        return Exception("Empty cookies")
+    user_agent = fingerprint['self.navigator.userAgent']
+    return cookies, user_agent

@@ -38,6 +38,15 @@ with DAG(
         task_id='run_reuters_script',
         bash_command="{{ 'docker exec airflow_tutorial-chrome-1 python /app/reuters.py' }}"
     )
+    
+    run_ft_script = BashOperator(
+        task_id='run_ft_script',
+        bash_command="{{ 'docker exec airflow_tutorial-chrome-1 python /app/financial_times.py' }}"
+    )
+    
+    run_st_script = BashOperator(
+        task_id='run_st_script',
+        bash_command="{{ 'docker exec airflow_tutorial-chrome-1 python /app/straits_times.py' }}"
+    )
 
-
-    run_startup_script >> [run_channelnews_asia_script, run_wall_street_journal_script, run_reuters_script]
+    run_startup_script >> [run_channelnews_asia_script, run_wall_street_journal_script, run_reuters_script, run_ft_script, run_st_script]

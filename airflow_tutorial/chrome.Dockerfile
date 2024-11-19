@@ -6,14 +6,15 @@ COPY ./requirements.txt /tmp/requirements.txt
 COPY ./dags/scripts /scripts
 COPY ./dags/app /app
 
-# Install temporary dependencies
+# Install temporary dependencies, including dos2unix
 RUN apk update && apk upgrade && \
     apk add --no-cache --virtual .build-deps \
     alpine-sdk \
     curl \
     wget \
     unzip \
-    gnupg 
+    gnupg \
+    dos2unix
 
 # Install dependencies
 RUN apk add --no-cache \
@@ -34,14 +35,17 @@ RUN apk add --no-cache \
     chromium \
     chromium-chromedriver
 
+# Upgrade pip
 RUN python -m pip install --upgrade pip
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --no-deps -r /tmp/requirements.txt && \
     rm /tmp/requirements.txt
 
-WORKDIR /app
+# Convert line endings of scripts in /scripts
+RUN dos2unix /scripts/*
 
+# Make scripts executable
 RUN chmod -R +x /scripts
 
 ENV PATH="/scripts:$PATH"

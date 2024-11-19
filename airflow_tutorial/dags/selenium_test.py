@@ -21,7 +21,7 @@ with DAG(
 
     run_startup_script = BashOperator(
         task_id='run_startup_script',
-        bash_command="{{ 'docker exec airflow_tutorial-chrome-1 /scripts/startup.sh' | safe }}"
+        bash_command="{{ 'docker exec airflow_tutorial-chrome-1 ./scripts/startup.sh' | safe }}"
     )
     
     run_channelnews_asia_script = BashOperator(

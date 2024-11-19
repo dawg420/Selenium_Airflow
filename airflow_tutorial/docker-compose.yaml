@@ -74,8 +74,6 @@ services:
       - default
 
   chrome:
-    depends_on:
-    - squid
     build:
       context: .
       dockerfile: chrome.Dockerfile

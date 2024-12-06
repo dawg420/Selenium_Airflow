@@ -14,8 +14,7 @@ This repo use selenium with Airflow to schedule scraping task
 - `docker-compose up -d`
 - Go to http://localhost:8081/
 
-##
-- Current DAG logic:
-  - All scraping processes are run in container `Chrome`.
-  - `startup.sh` initialises scraping environment by setting up a virttual framebuffer `Xvfb`
-  - All other scraping scripts depend on `startup.sh`, starts automatically after `startup.sh` is finished running
+## Current DAG logic
+- All scraping processes are run in container `Chrome`.
+- `startup.sh` initialises scraping environment by setting up a virttual framebuffer `Xvfb`
+- All other scraping scripts depend on `startup.sh`, starts automatically after `startup.sh` is finished running
